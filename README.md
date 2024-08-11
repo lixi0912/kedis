@@ -35,30 +35,6 @@ dependencies {
 repositories {
     mavenCentral()
 
-    // OR directly from GitHub:
-    exclusiveContent {
-        forRepository {
-            maven {
-                url = uri("https://maven.pkg.github.com/domgew/kedis")
-                credentials {
-                    username = "YOUR_GITHUB_USERNAME"
-                    password = "YOUR_GITHUB_TOKEN" // only needs "read:packages" - https://github.com/settings/tokens
-                }
-            }
-        }
-        filter {
-            includeModuleByRegex("^io\\.github\\.domgew$", "^kedis-?.*")
-        }
-    }
-
-    // OR directly and simpler from GitHub but much slower:
-    maven("https://maven.pkg.github.com/domgew/kedis") {
-        credentials {
-            username = "YOUR_GITHUB_USERNAME"
-            password = "YOUR_GITHUB_TOKEN" // only needs "read:packages" - https://github.com/settings/tokens
-        }
-    }
-
     // ...
 }
 ```
@@ -102,9 +78,11 @@ See Dokka-generated [docs](https://javadoc.io/doc/io.github.domgew/kedis/latest/
 | Host + Port Support           |              &check;               |                      &check;                       |
 | UNIX Socket Support           |              &check;               |                      &cross;                       |
 | Binary Data Support           |              &check;               |                      &cross;                       |
+| Stable Authentication         |      &check; (with AutoAuth)       |         &cross; (errors when reconnecting)         |
 | Mature                        |              &cross;               |                      &check;                       |
 | Full-Featured                 |              &cross;               |                      &check;                       |
 | Pub-Sub Support               |              &cross;               |                      &check;                       |
+| Pipelining Support            |              &cross;               |                      &check;                       |
 | GraalVM Native Support        |              &cross;               |                      &cross;                       |
 | Exclusive Configuration       | Compile Time / Sealed Polymorthism |            Run Time / Builder Exception            |
 | Responses                     |           Strictly Typed           |                      Semi-Raw                      |
@@ -128,3 +106,34 @@ Caching concept ("get or generate") with gradual service degradation:
 * Try to set the value for the key (KedisClient.set/setBinary) with the desired options (e.g. time-to-live, value
   replacement, ...) - this might however fail under some circumstances
 * Return the generated value (maybe close the connection)
+
+```mermaid
+---
+title: Get or Generate
+---
+
+flowchart
+    start([Value requested])
+    isAvailable{Is Redis available?}
+    getFromCache[Get from cache]
+    generateBeforeExit[Generate]
+    generateBeforeWrite[Generate]
+    writeToCache[Write to cache]
+    hasCachedValue{Has cached value?}
+    returnValue([Return value])
+    exitWithError([Exit with error])
+
+    start --> isAvailable
+    isAvailable -- no --> generateBeforeExit
+    isAvailable -- yes --> getFromCache
+    generateBeforeExit -- success --> returnValue
+    generateBeforeExit -- error --> exitWithError
+    getFromCache -- error --> generateBeforeExit
+    getFromCache -- success --> hasCachedValue
+    hasCachedValue -- no --> generateBeforeWrite
+    hasCachedValue -- yes --> returnValue
+    generateBeforeWrite -- success --> writeToCache
+    generateBeforeWrite -- error --> exitWithError
+    writeToCache -- error --> returnValue
+    writeToCache -- success --> returnValue
+```

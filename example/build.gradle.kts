@@ -1,6 +1,7 @@
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 
+val kopVersion: String by project
 val kotlinLoggingVersion: String by project
 val ktorVersion: String by project
 
@@ -24,6 +25,8 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(project(":kedis"))
+
+                implementation("io.github.domgew:kop:$kopVersion")
 
                 implementation("io.ktor:ktor-server-core:$ktorVersion")
                 implementation("io.ktor:ktor-server-cio:$ktorVersion")

@@ -30,6 +30,13 @@ public interface KedisClient : AutoCloseable {
                 configuration = configuration,
             )
         }
+
+        public operator fun invoke(
+            configuration: KedisConfiguration,
+        ): KedisClient =
+            newClient(
+                configuration = configuration,
+            )
     }
 
     /**

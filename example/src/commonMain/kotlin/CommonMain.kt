@@ -2,6 +2,10 @@ import io.github.domgew.kedis.KedisClient
 import io.github.domgew.kedis.KedisConfiguration
 import io.github.domgew.kedis.arguments.SetOptions
 import io.github.domgew.kedis.arguments.SyncOption
+import io.github.domgew.kop.KotlinObjectPool
+import io.github.domgew.kop.KotlinObjectPoolConfig
+import io.github.domgew.kop.KotlinObjectPoolStrategy
+import io.github.domgew.kop.withObject
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
@@ -16,25 +20,39 @@ import io.ktor.server.routing.patch
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
+import kotlin.coroutines.coroutineContext
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 
-@OptIn(ExperimentalStdlibApi::class)
 fun commonMain() {
     embeddedServer(
         factory = CIO,
         port = 8080,
     ) {
-        val redisClient = KedisClient.newClient(
-            configuration = KedisConfiguration(
-                endpoint = KedisConfiguration.Endpoint.HostPort(
-                    host = "127.0.0.1",
-                    port = 6379,
-                ),
-                authentication = KedisConfiguration.Authentication.NoAutoAuth,
-                connectionTimeoutMillis = 250,
-            ),
+        val kedisPool = KotlinObjectPool(
+            KotlinObjectPoolConfig(
+                maxSize = 3,
+                keepAliveFor = 2.minutes,
+                strategy = KotlinObjectPoolStrategy.LIFO,
+            ) {
+                println("kedisPool: Creating new instance")
+                KedisClient(
+                    configuration = KedisConfiguration(
+                        endpoint = KedisConfiguration.Endpoint.HostPort(
+                            host = "127.0.0.1",
+                            port = 6379,
+                        ),
+                        authentication = KedisConfiguration.Authentication.NoAutoAuth,
+                        connectionTimeoutMillis = 250,
+                        keepAlive = true,
+                    ),
+                )
+            }
         )
 
         routing {
@@ -46,7 +64,7 @@ fun commonMain() {
 
             route("/cache/flush") {
                 post {
-                    redisClient.use {
+                    kedisPool.withObject {
                         it.flushAll(sync = SyncOption.SYNC)
                     }
                 }
@@ -58,7 +76,7 @@ fun commonMain() {
                         ?: return@get
 
                     val fromCache = withContext(Dispatchers.IO) {
-                        redisClient.use {
+                        kedisPool.withObject {
                             it.get(key)
                         }
                     }
@@ -75,7 +93,7 @@ fun commonMain() {
                     val key = call.getParameterOrFail("key")
                         ?: return@post
 
-                    val fromCache = redisClient.use {
+                    val fromCache = kedisPool.withObject {
                         it.set(key, call.receiveText())
                     }
 
@@ -88,10 +106,9 @@ fun commonMain() {
                     val key = call.getParameterOrFail("key")
                         ?: return@patch
 
-                    val result = redisClient.use {
+                    val result = kedisPool.withObject {
                         it.getOrCallback(
                             key = key,
-                            overrideIfExists = false,
                         ) {
                             // this would probably be an expensive call to some API or similar
                             call.receiveText()
@@ -110,36 +127,65 @@ fun commonMain() {
         )
 }
 
-// very, very primitive and bad approach - you probably want to check whether the server is available, fast enough and catch error and provide fallbacks
+// you probably want to ensure the connection is fast enough by adding timeouts
 private suspend fun KedisClient.getOrCallback(
     key: String,
-    ttlMillis: Long = 1_000L * 60 * 60, // 1h
-    overrideIfExists: Boolean = true,
+    ttl: Duration = 1.hours,
     block: suspend () -> String,
-): Pair<Boolean, String> =
-    get(
-        key = key,
-    )
-        ?.let { Pair(true, it) }
-        ?: block()
-            .also {
-                set(
-                    key = key,
-                    value = it,
-                    options = SetOptions(
-                        previousKeyHandling =
-                        if (overrideIfExists) {
-                            SetOptions.PreviousKeyHandling.OVERRIDE
-                        } else {
-                            SetOptions.PreviousKeyHandling.KEEP_IF_EXISTS
-                        },
-                        expire = SetOptions.ExpireOption.ExpiresInMilliseconds(
-                            milliseconds = ttlMillis,
-                        ),
-                    ),
-                )
-            }
-            .let { Pair(false, it) }
+): Pair<Boolean, String> {
+    val availability = isAvailable()
+    if (availability != null) {
+        println("KedisClient.getOrCallback: Cache not available: ${availability.message}")
+        return Pair(false, block())
+    }
+
+    val valueFromCache = try {
+        get(key)
+    } catch (th: Throwable) {
+        coroutineContext.ensureActive()
+        println("KedisClient.getOrCallback: Could not get value from cache: ${th.message}")
+        return Pair(false, block())
+    }
+
+    if (valueFromCache != null) {
+        return Pair(true, valueFromCache)
+    }
+
+    val value = block()
+
+    try {
+        set(
+            key = key,
+            value = value,
+            options = SetOptions(
+                previousKeyHandling = SetOptions.PreviousKeyHandling.OVERRIDE,
+                getPreviousValue = false,
+                expire = SetOptions.ExpireOption.ExpiresInMilliseconds(
+                    milliseconds = ttl.inWholeMilliseconds,
+                ),
+            ),
+        )
+    } catch (th: Throwable) {
+        coroutineContext.ensureActive()
+        println("KedisClient.getOrCallback: Could not write value to cache: ${th.message}")
+    }
+
+    return Pair(false, value)
+}
+
+private suspend fun KedisClient.isAvailable(): Throwable? {
+    if (isConnected) {
+        return null
+    }
+
+    try {
+        connect()
+        return null
+    } catch (th: Throwable) {
+        coroutineContext.ensureActive()
+        return th
+    }
+}
 
 private suspend fun ApplicationCall.respondNotFound() {
     respondText(

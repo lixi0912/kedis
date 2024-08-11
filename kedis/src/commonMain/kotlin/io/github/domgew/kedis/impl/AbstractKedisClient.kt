@@ -19,9 +19,10 @@ import io.ktor.utils.io.ByteWriteChannel
 import io.ktor.utils.io.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 
 internal abstract class AbstractKedisClient(
@@ -93,8 +94,12 @@ internal abstract class AbstractKedisClient(
         }
     }
 
+    @Suppress("RedundantSuspendModifier")
     protected suspend fun doClose() {
         _socket?.dispose()
+        _socket = null
+        _writeChannel = null
+        _readChannel = null
     }
 
     protected suspend fun performAuthentication(
@@ -126,12 +131,12 @@ internal abstract class AbstractKedisClient(
             }
         } catch (ex: CancellationException) {
             // for preventing partial reads and writes
-            runBlocking {
+            withContext(NonCancellable) {
                 doClose()
             }
             throw ex
         } catch (ex: KedisException.GenericNetworkException) {
-            runBlocking {
+            withContext(NonCancellable) {
                 doClose()
             }
             throw ex
