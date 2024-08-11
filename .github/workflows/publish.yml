@@ -31,7 +31,6 @@ jobs:
       - name: publish
         env:
           IS_CI: yes
-          GH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PRIVATE_PASSWORD: ${{ secrets.GPG_PRIVATE_PASSWORD }}
           SONATYPE_USER: ${{ secrets.SONATYPE_USER }}

@@ -137,14 +137,6 @@ publishing {
         if (System.getenv("IS_CI") != "yes") {
             mavenLocal()
         } else {
-            maven {
-                name = "GitHubPackages"
-                url = uri("https://maven.pkg.github.com/domgew/kedis")
-                credentials {
-                    username = "domgew"
-                    password = System.getenv("GH_TOKEN")
-                }
-            }
             // see https://medium.com/kodein-koders/publish-a-kotlin-multiplatform-library-on-maven-central-6e8a394b7030
             maven {
                 name = "oss"
