@@ -43,8 +43,8 @@ kotlin {
         publish = true,
     )
 
+    jvmToolchain(17)
     jvm {
-        jvmToolchain(17)
     }
     addNativeTargets {
     }
