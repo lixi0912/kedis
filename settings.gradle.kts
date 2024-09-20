@@ -1,20 +1,13 @@
-pluginManagement {
-    val dokkaVersion: String by settings
-    val kotlinVersion: String by settings
-    val koverVersion: String by settings
+rootProject.name = "kedis-root"
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
+pluginManagement {
     repositories {
         gradlePluginPortal()
         mavenCentral()
         google()
         maven("https://jitpack.io/")
         mavenLocal()
-    }
-
-    plugins {
-        kotlin("multiplatform") version kotlinVersion apply false
-        id("org.jetbrains.dokka") version dokkaVersion apply false
-        id("org.jetbrains.kotlinx.kover") version koverVersion apply false
     }
 }
 
@@ -63,8 +56,6 @@ dependencyResolutionManagement {
         mavenLocal()
     }
 }
-
-rootProject.name = "kedis"
 
 include(":kedis")
 

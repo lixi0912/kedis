@@ -1,5 +1,6 @@
 plugins {
-    kotlin("multiplatform") apply false
-    id("org.jetbrains.dokka") apply false
-    id("org.jetbrains.kotlinx.kover") apply false
+    alias(libs.plugins.dokka) apply false
+    alias(libs.plugins.kover) apply false
+    alias(libs.plugins.kotlinJvm) apply false
+    alias(libs.plugins.kotlinMultiplatform) apply false
 }

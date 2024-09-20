@@ -1,0 +1,47 @@
+[versions]
+junit = "4.13.2"
+kotlin = "2.0.20"
+kotlinx-coroutines = "1.8.1"
+kotlinx-datetime = "0.6.0"
+ktor = "2.3.12"
+dokka = "1.9.20"
+kover = "0.8.3"
+kop = "0.0.1"
+logging-oshai = "6.0.9"
+logback-classic = "1.4.14"
+semver = "2.0.0"
+bignum = "0.3.10"
+
+[libraries]
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
+
+# ktor
+ktor-server-core = { group = "io.ktor", name = "ktor-server-core", version.ref = "ktor" }
+ktor-server-cio = { group = "io.ktor", name = "ktor-server-cio", version.ref = "ktor" }
+ktor-network = { group = "io.ktor", name = "ktor-network", version.ref = "ktor" }
+
+# domgew-kedis
+kop = { group = "io.github.domgew", name = "kop", version.ref = "kop" }
+
+# example dependencies
+logging-oshai = { module = "io.github.oshai:kotlin-logging", version.ref = "logging-oshai" }
+logging-logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback-classic" }
+
+# test dependencies
+semver = { module = "net.swiftzer.semver:semver", version.ref = "semver" }
+
+# libs
+bignum = { module = "com.ionspin.kotlin:bignum", version.ref = "bignum" }
+
+[plugins]
+kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+#ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
+kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
