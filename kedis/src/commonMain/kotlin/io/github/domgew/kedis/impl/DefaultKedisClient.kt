@@ -15,6 +15,9 @@ import io.github.domgew.kedis.commands.hash.HashKeysCommand
 import io.github.domgew.kedis.commands.hash.HashLengthCommand
 import io.github.domgew.kedis.commands.hash.HashSetBinaryCommand
 import io.github.domgew.kedis.commands.hash.HashSetCommand
+import io.github.domgew.kedis.commands.list.LLenCommands
+import io.github.domgew.kedis.commands.list.PopCommand
+import io.github.domgew.kedis.commands.list.PushCommand
 import io.github.domgew.kedis.commands.server.BgSaveCommand
 import io.github.domgew.kedis.commands.server.FlushCommand
 import io.github.domgew.kedis.commands.server.InfoCommand
@@ -466,6 +469,86 @@ internal class DefaultKedisClient(
             ConfigSetCommand(
                 parameter = parameter,
                 parameters = parameters,
+            ),
+        )
+    }
+
+
+    override suspend fun lpush(
+        key: String,
+        value: String,
+        vararg values: String
+    ): Int = lock.withLock {
+        executeCommand(
+            PushCommand.Operation.LPUSH.toCommand(
+                key,
+                value,
+                *values,
+            ),
+        )
+    }
+
+    override suspend fun lpushx(
+        key: String,
+        value: String,
+        vararg values: String
+    ): Int = lock.withLock {
+        executeCommand(
+            PushCommand.Operation.LPUSHX.toCommand(
+                key,
+                value,
+                *values,
+            ),
+        )
+    }
+
+    override suspend fun rpush(
+        key: String,
+        value: String,
+        vararg values: String
+    ): Int = lock.withLock {
+        executeCommand(
+            PushCommand.Operation.RPUSH.toCommand(
+                key,
+                value,
+                *values,
+            ),
+        )
+    }
+
+    override suspend fun rpushx(
+        key: String,
+        value: String,
+        vararg values: String
+    ): Int = lock.withLock {
+        executeCommand(
+            PushCommand.Operation.RPUSHX.toCommand(
+                key,
+                value,
+                *values,
+            ),
+        )
+    }
+
+    override suspend fun lpop(key: String): String? = lock.withLock {
+        executeCommand(
+            PopCommand.Operation.LPOP.toCommand(
+                key
+            ),
+        )
+    }
+    override suspend fun rpop(key: String): String? = lock.withLock {
+        executeCommand(
+            PopCommand.Operation.RPOP.toCommand(
+                key
+            ),
+        )
+    }
+
+    override suspend fun llen(key: String): Int = lock.withLock {
+        executeCommand(
+            LLenCommands(
+                key
             ),
         )
     }

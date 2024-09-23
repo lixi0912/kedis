@@ -3,6 +3,7 @@ package io.github.domgew.kedis
 import io.github.domgew.kedis.arguments.InfoSectionName
 import io.github.domgew.kedis.arguments.SetOptions
 import io.github.domgew.kedis.arguments.SyncOption
+import io.github.domgew.kedis.commands.list.ListCommands
 import io.github.domgew.kedis.impl.DefaultKedisClient
 import io.github.domgew.kedis.results.server.BgSaveResult
 import io.github.domgew.kedis.results.server.InfoSection
@@ -16,7 +17,8 @@ import io.github.domgew.kedis.results.value.TtlResult
  * @see [KedisClient.newClient]
  */
 @OptIn(ExperimentalStdlibApi::class)
-public interface KedisClient : AutoCloseable {
+public interface KedisClient : AutoCloseable,
+                               ListCommands {
     public companion object {
         /**
          * Creates a new client instance without connecting.
