@@ -4,6 +4,7 @@ import io.github.domgew.kedis.KedisConfiguration
 import io.github.domgew.kedis.arguments.InfoSectionName
 import io.github.domgew.kedis.arguments.SetOptions
 import io.github.domgew.kedis.arguments.SyncOption
+import io.github.domgew.kedis.commands.config.ConfigSetCommand
 import io.github.domgew.kedis.commands.hash.HashDelCommand
 import io.github.domgew.kedis.commands.hash.HashExistsCommand
 import io.github.domgew.kedis.commands.hash.HashGetAllBinaryCommand
@@ -453,6 +454,18 @@ internal class DefaultKedisClient(
         executeCommand(
             HashLengthCommand(
                 key = key,
+            ),
+        )
+    }
+
+    override suspend fun configSet(
+        parameter: Pair<String, String>,
+        vararg parameters: Pair<String, String>
+    ): String = lock.withLock {
+        executeCommand(
+            ConfigSetCommand(
+                parameter = parameter,
+                parameters = parameters,
             ),
         )
     }

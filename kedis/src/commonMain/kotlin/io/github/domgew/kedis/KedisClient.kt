@@ -468,4 +468,14 @@ public interface KedisClient : AutoCloseable {
     public suspend fun hashLength(
         key: String,
     ): Long
+
+    /**
+     * Reconfigure the server at run time without the need to restart Redis.
+     *
+     * [https://redis.io/docs/latest/commands/config-set/]
+     */
+    public suspend fun configSet(
+        parameter: Pair<String, String>,
+        vararg parameters: Pair<String, String>
+    ): String
 }
